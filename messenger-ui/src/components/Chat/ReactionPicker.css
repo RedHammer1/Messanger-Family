@@ -1,0 +1,172 @@
+.reaction-picker-horizontal {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    width: calc(100% - 40px);
+    max-width: 500px;
+    overflow: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.reaction-picker-horizontal.closing {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+    pointer-events: none;
+}
+
+.reaction-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.reaction-picker-title {
+    font-size: 13px;
+    color: #666;
+    font-weight: 500;
+}
+
+.remove-reaction-btn {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.remove-reaction-btn:hover {
+    background-color: #fee;
+}
+
+.close-picker-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.close-picker-btn:hover {
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+.reaction-picker-scroll-horizontal {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    padding: 12px 0;
+}
+
+.reaction-picker-scroll-horizontal::-webkit-scrollbar {
+    height: 4px;
+}
+
+.reaction-picker-scroll-horizontal::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.reaction-picker-scroll-horizontal::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 2px;
+}
+
+.reactions-container {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    padding: 0 12px;
+    min-width: max-content;
+}
+
+.reaction-option-horizontal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 12px;
+    min-width: 52px;
+}
+
+.reaction-option-horizontal:hover {
+    background-color: #f0f0f0;
+    transform: scale(1.15);
+}
+
+.reaction-option-horizontal.active {
+    background-color: #e3f2fd;
+    border-bottom: 2px solid #3498db;
+}
+
+.reaction-emoji-horizontal {
+    font-size: 28px;
+}
+
+.reaction-picker-footer {
+    padding: 8px;
+    text-align: center;
+    border-top: 1px solid #e0e0e0;
+    background-color: #f8f9fa;
+}
+
+.scroll-indicator-horizontal {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.scroll-dot {
+    width: 4px;
+    height: 4px;
+    background-color: #ccc;
+    border-radius: 50%;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+    .reaction-picker-horizontal {
+        bottom: 70px;
+        width: calc(100% - 20px);
+        max-width: none;
+        border-radius: 12px;
+    }
+    
+    .reaction-option-horizontal {
+        min-width: 44px;
+        padding: 8px 0;
+    }
+    
+    .reaction-emoji-horizontal {
+        font-size: 24px;
+    }
+    
+    .reaction-picker-header {
+        padding: 8px 12px;
+    }
+    
+    .reaction-picker-title {
+        font-size: 12px;
+    }
+}

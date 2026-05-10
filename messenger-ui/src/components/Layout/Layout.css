@@ -1,0 +1,128 @@
+.layout {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+.main-content {
+    flex: 1;
+    width: 100%;
+    overflow: hidden;
+}
+
+.chats-layout {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+.chat-list-wrapper {
+    width: 320px;
+    flex-shrink: 0;
+    background-color: #f5f5f5;
+    border-right: 1px solid #e0e0e0;
+}
+
+.chat-wrapper {
+    flex: 1;
+}
+
+.chat-wrapper.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Стили для страниц с кнопкой назад */
+.page-wrapper {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f0f2f5;
+}
+
+.page-header-with-back {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    background-color: white;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.page-header-with-back h1 {
+    margin: 0;
+    font-size: 24px;
+    color: #333;
+}
+
+.back-button-page {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #3498db;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.back-button-page:hover {
+    background-color: #f0f0f0;
+}
+
+.page-content-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+/* Десктопная версия */
+@media (min-width: 769px) {
+    .chat-list-wrapper {
+        display: block !important;
+    }
+}
+
+/* Мобильная версия */
+@media (max-width: 768px) {
+    .chat-list-wrapper {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        z-index: 100;
+        background-color: #f5f5f5;
+        transition: transform 0.3s ease;
+    }
+    
+    .chat-list-wrapper.hidden {
+        transform: translateX(-100%);
+        display: block !important;
+    }
+    
+    .chat-list-wrapper:not(.hidden) {
+        transform: translateX(0);
+    }
+    
+    .chat-wrapper {
+        width: 100%;
+    }
+    
+    .page-header-with-back {
+        padding: 14px 16px;
+    }
+    
+    .page-header-with-back h1 {
+        font-size: 20px;
+    }
+    
+    .page-content-wrapper {
+        padding: 16px;
+    }
+}

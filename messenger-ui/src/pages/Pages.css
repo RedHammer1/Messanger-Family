@@ -1,0 +1,657 @@
+/* Общие стили для страниц */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f0f2f5;
+}
+
+.page-header {
+  background-color: white;
+  padding: 24px 32px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #333;
+  font-weight: 600;
+}
+
+.page-header p {
+  margin: 8px 0 0 0;
+  font-size: 16px;
+  color: #666;
+}
+
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+}
+
+/* Адаптив для планшетов */
+@media (max-width: 768px) {
+  .page-header {
+    padding: 18px 24px;
+  }
+  
+  .page-header h1 {
+    font-size: 24px;
+  }
+  
+  .page-content {
+    padding: 16px 20px;
+  }
+}
+
+/* Адаптив для телефонов */
+@media (max-width: 480px) {
+  .page-header {
+    padding: 14px 16px;
+  }
+  
+  .page-header h1 {
+    font-size: 20px;
+  }
+  
+  .page-header p {
+    font-size: 14px;
+  }
+  
+  .page-content {
+    padding: 12px 12px;
+  }
+}
+
+/* Стили для форм */
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.form-group input {
+  width: 100%;
+  max-width: 400px;
+  padding: 14px 18px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  border-color: #3498db;
+}
+
+.form-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.form-button:hover {
+  background-color: #2980b9;
+}
+
+.form-link {
+  margin-top: 20px;
+  font-size: 15px;
+}
+
+.form-link span {
+  color: #3498db;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.form-link span:hover {
+  color: #2980b9;
+}
+
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+/* Стили для списка контактов */
+.contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.contact-item:hover {
+  background-color: #f5f5f5;
+  transform: translateX(4px);
+}
+
+.contact-avatar {
+  width: 56px;
+  height: 56px;
+  background-color: #3498db;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+  font-size: 20px;
+  font-weight: bold;
+  color: white;
+}
+
+.contact-info {
+  flex: 1;
+}
+
+.contact-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.contact-status {
+  font-size: 14px;
+  color: #2ecc71;
+}
+
+.contact-status.offline {
+  color: #999;
+}
+
+/* Стили для настроек */
+.settings-section {
+  background-color: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.settings-section h2 {
+  font-size: 20px;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #eee;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-label {
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+}
+
+.setting-value {
+  font-size: 16px;
+  color: #666;
+}
+
+.setting-select {
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.theme-button {
+  background-color: #f0f2f5;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.theme-button:hover {
+  background-color: #e0e0e0;
+}
+
+.success-message {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.setting-input {
+    flex: 1;
+    max-width: 300px;
+    padding: 10px 14px;
+    font-size: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+}
+
+.setting-input:focus {
+    border-color: #3498db;
+}
+
+.setting-textarea {
+    flex: 1;
+    max-width: 400px;
+    padding: 10px 14px;
+    font-size: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.setting-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+}
+
+.setting-checkbox input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.setting-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.edit-button {
+    background-color: #f0f2f5;
+    color: #333;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+    margin-top: 16px;
+}
+
+.edit-button:hover {
+    background-color: #e0e0e0;
+}
+
+.cancel-button {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.cancel-button:hover {
+    background-color: #c0392b;
+}
+
+.tag-value {
+    font-family: monospace;
+    font-size: 16px;
+    color: #3498db;
+}
+
+.tag-edit {
+    flex: 1;
+}
+
+.tag-edit small {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Стили для поиска */
+.search-container {
+    margin-bottom: 24px;
+}
+
+.search-input-wrapper {
+    display: flex;
+    gap: 12px;
+}
+
+.search-input-large {
+    flex: 1;
+    padding: 14px 18px;
+    font-size: 16px;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    outline: none;
+}
+
+.search-input-large:focus {
+    border-color: #3498db;
+}
+
+.search-button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.search-button:hover {
+    background-color: #2980b9;
+}
+
+.search-results {
+    margin-top: 20px;
+}
+
+.user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.user-card {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    background-color: white;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.user-card:hover {
+    background-color: #f5f5f5;
+    transform: translateX(4px);
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    background-color: #3498db;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+}
+
+.user-info {
+    flex: 1;
+}
+
+.user-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.user-tag {
+    font-size: 14px;
+    color: #3498db;
+    font-family: monospace;
+    margin-top: 4px;
+}
+
+.user-bio {
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.search-loading, .search-empty {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 16px;
+}
+
+/* Модальное окно */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #333;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #999;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+.modal-body {
+    padding: 20px 24px;
+}
+
+.detail-item {
+    display: flex;
+    margin-bottom: 16px;
+}
+
+.detail-label {
+    width: 80px;
+    font-weight: 600;
+    color: #666;
+}
+
+.detail-value {
+    flex: 1;
+    color: #333;
+}
+
+.contact-badge {
+    background-color: #2ecc71;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    margin-left: 12px;
+}
+
+.contact-tag {
+    font-size: 13px;
+    color: #3498db;
+    font-family: monospace;
+    margin-top: 2px;
+}
+
+.contact-bio {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+
+.modal-actions {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+}
+
+.add-button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 100%;
+}
+
+.add-button:hover {
+    background-color: #2980b9;
+}
+
+.remove-button {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 100%;
+}
+
+.remove-button:hover {
+    background-color: #c0392b;
+}
+
+.already-contact {
+    text-align: center;
+    padding: 10px;
+    color: #2ecc71;
+    font-weight: 500;
+}
+
+.setting-input small {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #666;
+}
+
+.search-btn {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.search-btn:hover {
+    background-color: #27ae60;
+}
+
+.local-search {
+    margin-bottom: 16px;
+}
+
+.local-search-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.local-search-input:focus {
+    border-color: #3498db;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.create-group-btn, .new-chat-btn {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.create-group-btn:hover, .new-chat-btn:hover {
+    background-color: #2980b9;
+}
