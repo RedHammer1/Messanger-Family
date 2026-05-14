@@ -1,15 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import FileUploader from './FileUploader';
 
 interface MessageInputProps {
     onSendMessage: (text: string) => void;
     onTyping: (isTyping: boolean) => void;
+    onFileUploaded?: (message: any) => void;
+    chatId?: number;
+    currentUserId?: number;
 }
 
-const MessageInput = ({ onSendMessage, onTyping }: MessageInputProps) => {
+const MessageInput = ({ onSendMessage, onTyping, onFileUploaded, chatId, currentUserId }: MessageInputProps) => {
     const [message, setMessage] = useState('');
     const isTypingRef = useRef<boolean>(false);
 
-    // Отправка статуса печати
     const sendTypingStatus = useCallback((isTyping: boolean) => {
         if (isTypingRef.current !== isTyping) {
             isTypingRef.current = isTyping;
@@ -21,7 +24,6 @@ const MessageInput = ({ onSendMessage, onTyping }: MessageInputProps) => {
         if (message.trim()) {
             onSendMessage(message);
             setMessage('');
-            // После отправки сообщения - перестаём печатать
             sendTypingStatus(false);
         }
     };
@@ -36,13 +38,10 @@ const MessageInput = ({ onSendMessage, onTyping }: MessageInputProps) => {
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newValue = e.target.value;
         setMessage(newValue);
-        
-        // Определяем статус печати: true если есть текст, false если пусто
         const isTyping = newValue.length > 0;
         sendTypingStatus(isTyping);
     };
 
-    // При размонтировании компонента сообщаем, что перестали печатать
     useEffect(() => {
         return () => {
             if (isTypingRef.current) {
@@ -54,6 +53,13 @@ const MessageInput = ({ onSendMessage, onTyping }: MessageInputProps) => {
     return (
         <div className="message-input-container">
             <div className="message-input-wrapper">
+                {chatId && currentUserId && onFileUploaded && (
+                    <FileUploader 
+                        chatId={chatId}
+                        currentUserId={currentUserId}
+                        onFileUploaded={onFileUploaded}
+                    />
+                )}
                 <textarea
                     className="message-input"
                     placeholder="Введите сообщение..."

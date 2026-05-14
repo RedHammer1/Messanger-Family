@@ -454,12 +454,18 @@ export async function getChatMessages(chatId: number, limit: number = 50, offset
         // Получаем ID всех сообщений
         const messageIds = messages.map(m => m.id);
         
-        // Получаем реакции для всех сообщений одним запросом
+        // Получаем реакции для всех сообщений
         const reactionsResult = await client.query(
             `SELECT r.*, u.name as user_name
              FROM message_reactions r
              JOIN users u ON r.user_id = u.id
              WHERE r.message_id = ANY($1::int[])`,
+            [messageIds]
+        );
+        
+        // Получаем файлы для всех сообщений
+        const filesResult = await client.query(
+            `SELECT * FROM message_files WHERE message_id = ANY($1::int[])`,
             [messageIds]
         );
         
@@ -472,14 +478,24 @@ export async function getChatMessages(chatId: number, limit: number = 50, offset
             reactionsMap.get(reaction.message_id)!.push(reaction);
         }
         
-        // Добавляем реакции к каждому сообщению
-        const messagesWithReactions = messages.map(msg => ({
+        // Группируем файлы по message_id
+        const filesMap = new Map<number, any[]>();
+        for (const file of filesResult.rows) {
+            if (!filesMap.has(file.message_id)) {
+                filesMap.set(file.message_id, []);
+            }
+            filesMap.get(file.message_id)!.push(file);
+        }
+        
+        // Добавляем реакции и файлы к каждому сообщению
+        const messagesWithData = messages.map(msg => ({
             ...msg,
             reactions: reactionsMap.get(msg.id) || [],
-            user_reaction: userId ? reactionsMap.get(msg.id)?.find(r => r.user_id === userId)?.reaction : undefined
+            user_reaction: userId ? reactionsMap.get(msg.id)?.find(r => r.user_id === userId)?.reaction : undefined,
+            files: filesMap.get(msg.id) || []
         }));
         
-        return messagesWithReactions;
+        return messagesWithData;
     } finally {
         client.release();
     }
@@ -761,6 +777,31 @@ export async function getMessagesReactions(messageIds: number[]): Promise<Map<nu
             reactionsMap.get(messageId)!.push(row);
         }
         return reactionsMap;
+    } finally {
+        client.release();
+    }
+}
+
+////File
+// Получение файлов для сообщений
+export async function getMessageFiles(messageIds: number[]): Promise<Map<number, any[]>> {
+    if (messageIds.length === 0) return new Map();
+    
+    const client = await pool.connect();
+    try {
+        const result = await client.query(
+            `SELECT * FROM message_files WHERE message_id = ANY($1::int[])`,
+            [messageIds]
+        );
+        
+        const filesMap = new Map<number, any[]>();
+        for (const row of result.rows) {
+            if (!filesMap.has(row.message_id)) {
+                filesMap.set(row.message_id, []);
+            }
+            filesMap.get(row.message_id)!.push(row);
+        }
+        return filesMap;
     } finally {
         client.release();
     }

@@ -46,7 +46,9 @@ CREATE TABLE IF NOT EXISTS messages (
     chat_id INTEGER REFERENCES chats(id) ON DELETE CASCADE,
     sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     text TEXT NOT NULL,
+	is_deleted BOOLEAN DEFAULT false,
 	has_attachments BOOLEAN DEFAULT false,
+	has_files BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -60,6 +62,17 @@ CREATE TABLE IF NOT EXISTS message_reactions (
     UNIQUE(message_id, user_id)
 );
 
+CREATE TABLE IF NOT EXISTS message_files (
+    id SERIAL PRIMARY KEY,
+    message_id INTEGER REFERENCES messages(id) ON DELETE CASCADE,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    file_size INTEGER NOT NULL,
+    file_type VARCHAR(50) NOT NULL, -- 'image', 'video', 'document'
+    mime_type VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_message_reactions_message_id ON message_reactions(message_id);
 CREATE INDEX IF NOT EXISTS idx_message_reactions_user_id ON message_reactions(user_id);
 
@@ -70,3 +83,4 @@ CREATE INDEX IF NOT EXISTS idx_chat_participants_user_id ON chat_participants(us
 
 CREATE INDEX IF NOT EXISTS idx_contacts_user_id ON contacts(user_id);
 CREATE INDEX IF NOT EXISTS idx_contacts_contact_id ON contacts(contact_id);
+

@@ -26,7 +26,7 @@ const Chat = ({ currentUser, chatId, onBack }: ChatProps) => {
 
     useEffect(() => {
         if (!chatId) return;
-        
+
         const fetchChatInfo = async () => {
             setLoading(true);
             try {
@@ -44,7 +44,7 @@ const Chat = ({ currentUser, chatId, onBack }: ChatProps) => {
 
     useEffect(() => {
         if (!chatId) return;
-        
+
         const newSocket = io('http://localhost:3001');
         setSocket(newSocket);
 
@@ -97,27 +97,27 @@ const Chat = ({ currentUser, chatId, onBack }: ChatProps) => {
 
     const getChatDisplayName = () => {
         if (!chatInfo) return 'Загрузка...';
-        
+
         if (chatInfo.type === 'group') {
             return chatInfo.name || 'Групповой чат';
         }
-        
+
         // Личный чат - проверяем наличие participants
         if (!chatInfo.participants || !Array.isArray(chatInfo.participants)) {
             return 'Пользователь';
         }
-        
+
         const otherParticipant = chatInfo.participants.find(p => p && p.id !== currentUser.id);
         return otherParticipant?.name || 'Пользователь';
     };
 
     const getChatStatus = () => {
         if (!chatInfo || chatInfo.type === 'group') return null;
-        
+
         if (!chatInfo.participants || !Array.isArray(chatInfo.participants)) {
             return null;
         }
-        
+
         const otherParticipant = chatInfo.participants.find(p => p && p.id !== currentUser.id);
         return otherParticipant?.tag || null;
     };
@@ -201,7 +201,7 @@ const Chat = ({ currentUser, chatId, onBack }: ChatProps) => {
 
     return (
         <div className="chat">
-            <ChatHeader 
+            <ChatHeader
                 chatName={getChatDisplayName()}
                 status={getChatStatus() || (isConnected ? "онлайн" : "офлайн")}
                 onBack={onBack}
@@ -210,16 +210,16 @@ const Chat = ({ currentUser, chatId, onBack }: ChatProps) => {
                 onInfo={() => chatInfo?.type === 'group' && setShowGroupInfo(true)}
                 showBackButton={window.innerWidth <= 768 && !!onBack}
             />
-            
-            <MessageList 
-                messages={messages} 
+
+            <MessageList
+                messages={messages}
                 currentUserId={currentUser.id}
                 onReactionChange={(messageId, reaction) => {
                     // Можно добавить дополнительную логику при изменении реакции
                     console.log(`Message ${messageId} reaction changed to ${reaction}`);
                 }}
             />
-            
+
             {getTypingText() && (
                 <div className="typing-indicator">
                     <div className="typing-dots">
@@ -230,8 +230,16 @@ const Chat = ({ currentUser, chatId, onBack }: ChatProps) => {
                     {getTypingText()}
                 </div>
             )}
-            <MessageInput onSendMessage={sendMessage} onTyping={handleTyping} />
-            
+            <MessageInput
+                onSendMessage={sendMessage}
+                onTyping={handleTyping}
+                onFileUploaded={(message) => {
+                    setMessages(prev => [...prev, message]);
+                }}
+                chatId={chatId}
+                currentUserId={currentUser.id}
+            />
+
             <ChatSearchPanel
                 isOpen={isSearchOpen}
                 onClose={() => setIsSearchOpen(false)}
@@ -239,7 +247,7 @@ const Chat = ({ currentUser, chatId, onBack }: ChatProps) => {
                 currentUserId={currentUser.id}
                 onSearchResultClick={scrollToMessage}
             />
-            
+
             {showGroupInfo && chatInfo && (
                 <GroupInfoModal
                     chatId={chatId}

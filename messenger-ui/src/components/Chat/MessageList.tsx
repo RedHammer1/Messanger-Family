@@ -25,6 +25,7 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
     const [reactionsMap, setReactionsMap] = useState<ReactionsMap>({});
     const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
     const [loadingReactions, setLoadingReactions] = useState<Set<string>>(new Set());
+    const [downloadingFiles, setDownloadingFiles] = useState<Set<number>>(new Set());
 
     // Подписка на WebSocket события реакций
     useEffect(() => {
@@ -65,8 +66,56 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
         };
     }, [socket, currentUserId]);
 
+    // Функция для скачивания файла
+    const handleDownloadFile = async (messageId: string, fileId: number, fileName: string) => {
+        setDownloadingFiles(prev => new Set(prev).add(fileId));
+        
+        try {
+            const response = await fetch(`http://localhost:3001/api/upload/download/${messageId}/${fileId}`, {
+                headers: {
+                    'X-User-Id': currentUserId.toString()
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Ошибка скачивания файла');
+            }
+            
+            // Получаем файл как blob
+            const blob = await response.blob();
+            
+            // Создаём ссылку для скачивания
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+        } catch (err) {
+            console.error('Ошибка скачивания:', err);
+            alert('Не удалось скачать файл');
+        } finally {
+            setDownloadingFiles(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(fileId);
+                return newSet;
+            });
+        }
+    };
+
     const formatTime = (date: Date) => {
         return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const formatFileSize = (bytes: number): string => {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
     const loadReactions = async (messageId: string) => {
@@ -100,7 +149,6 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
     const handleMessageClick = (event: React.MouseEvent, messageId: string) => {
         event.stopPropagation();
         
-        // Загружаем реакции если ещё не загружены
         if (!reactionsMap[messageId]) {
             loadReactions(messageId);
         }
@@ -114,7 +162,6 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
     const handleSelectReaction = async (reaction: string) => {
         if (!selectedMessageId) return;
         
-        // Отправляем через WebSocket для real-time обновления
         if (socket) {
             socket.emit('add_reaction', {
                 messageId: parseInt(selectedMessageId),
@@ -124,7 +171,6 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
             });
         }
         
-        // Также делаем REST запрос для надёжности
         try {
             await fetch(`http://localhost:3001/api/chats/reaction/${selectedMessageId}`, {
                 method: 'POST',
@@ -139,7 +185,6 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
     const handleRemoveReaction = async () => {
         if (!selectedMessageId) return;
         
-        // Отправляем через WebSocket для real-time обновления
         if (socket) {
             socket.emit('remove_reaction', {
                 messageId: parseInt(selectedMessageId),
@@ -148,7 +193,6 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
             });
         }
         
-        // Также делаем REST запрос для надёжности
         try {
             await fetch(`http://localhost:3001/api/chats/reaction/${selectedMessageId}/${currentUserId}`, {
                 method: 'DELETE'
@@ -166,7 +210,6 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
         const reactions = reactionsMap[messageId]?.reactions || [];
         if (reactions.length === 0) return null;
         
-        // Группируем реакции
         const grouped: { [key: string]: string[] } = {};
         reactions.forEach((r: any) => {
             if (!grouped[r.reaction]) {
@@ -197,6 +240,107 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
 
     const currentReaction = selectedMessageId ? reactionsMap[selectedMessageId]?.userReaction : undefined;
 
+    // Компонент для отображения вложений
+    const MessageAttachments = ({ messageId, files }: { messageId: string; files: any[] }) => {
+        const [selectedFile, setSelectedFile] = useState<any>(null);
+
+        if (!files || files.length === 0) return null;
+
+        const getFileIcon = (fileType: string) => {
+            switch (fileType) {
+                case 'image': return '🖼️';
+                case 'video': return '🎥';
+                default: return '📎';
+            }
+        };
+
+        const handleFileClick = (file: any) => {
+            if (file.file_type === 'image' || file.file_type === 'video') {
+                setSelectedFile(file);
+            }
+        };
+
+        return (
+            <>
+                <div className="message-attachments">
+                    {files.map((file, idx) => (
+                        <div key={idx} className="attachment-wrapper">
+                            <div 
+                                className={`message-attachment ${file.file_type}-attachment`}
+                                onClick={() => handleFileClick(file)}
+                            >
+                                {file.file_type === 'image' && (
+                                    <img 
+                                        src={`http://localhost:3001${file.file_path}`} 
+                                        alt={file.file_name}
+                                        className="attachment-thumb"
+                                    />
+                                )}
+                                {file.file_type === 'video' && (
+                                    <div className="video-preview">
+                                        <video src={`http://localhost:3001${file.file_path}`} className="video-thumb" />
+                                        <span className="video-play-icon">▶️</span>
+                                    </div>
+                                )}
+                                {file.file_type === 'document' && (
+                                    <div className="document-preview">
+                                        <span className="doc-icon">{getFileIcon(file.file_type)}</span>
+                                        <div className="doc-info">
+                                            <span className="doc-name">{file.file_name}</span>
+                                            <span className="doc-size">{formatFileSize(file.file_size)}</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            {/* Кнопка скачивания */}
+                            <button 
+                                className="download-file-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDownloadFile(messageId, file.id, file.file_name);
+                                }}
+                                disabled={downloadingFiles.has(file.id)}
+                                title="Скачать файл"
+                            >
+                                {downloadingFiles.has(file.id) ? '⏳' : '💾'}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+                
+                {selectedFile && (
+                    <div className="media-modal" onClick={() => setSelectedFile(null)}>
+                        <div className="media-modal-content">
+                            {selectedFile.file_type === 'image' ? (
+                                <img 
+                                    src={`http://localhost:3001${selectedFile.file_path}`} 
+                                    alt={selectedFile.file_name}
+                                    className="media-full"
+                                />
+                            ) : (
+                                <video 
+                                    src={`http://localhost:3001${selectedFile.file_path}`} 
+                                    controls 
+                                    autoPlay
+                                    className="media-full"
+                                />
+                            )}
+                            <div className="media-controls">
+                                <button 
+                                    className="media-download-btn"
+                                    onClick={() => handleDownloadFile(messageId, selectedFile.id, selectedFile.file_name)}
+                                >
+                                    💾 Скачать
+                                </button>
+                                <button className="media-close" onClick={() => setSelectedFile(null)}>×</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
     return (
         <div className="message-list">
             {messages.map((message) => (
@@ -213,6 +357,9 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
                     <div className="message-text">
                         {highlightText(message.text, searchQuery)}
                     </div>
+                    {message.files && message.files.length > 0 && (
+                        <MessageAttachments messageId={message.id} files={message.files} />
+                    )}
                     {getReactionDisplay(message.id)}
                 </div>
             ))}

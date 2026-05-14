@@ -1,0 +1,23 @@
+.attach-file-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.attach-file-btn:hover:not(:disabled) {
+    background-color: #f0f0f0;
+}
+
+.attach-file-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
