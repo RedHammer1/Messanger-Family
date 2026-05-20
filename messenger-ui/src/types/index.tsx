@@ -39,7 +39,7 @@ export interface Message {
     senderName: string;
     chatId: string;
     timestamp: Date;
-    createdAt?: Date;
+    createdAt: Date;
     updatedAt?: Date;
     isOwn?: boolean;
     hasAttachments?: boolean;

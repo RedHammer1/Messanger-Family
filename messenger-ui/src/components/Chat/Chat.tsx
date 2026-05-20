@@ -45,7 +45,7 @@ const Chat = ({ currentUser, chatId, onBack }: ChatProps) => {
     useEffect(() => {
         if (!chatId) return;
 
-        const newSocket = io('http://localhost:3001');
+        const newSocket = io('/');
         setSocket(newSocket);
 
         newSocket.on('connect', () => {

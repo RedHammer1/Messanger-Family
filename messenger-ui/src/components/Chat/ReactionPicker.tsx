@@ -16,7 +16,7 @@ const REACTIONS = [
 ];
 
 const ReactionPicker = ({ isOpen, onClose, onSelectReaction, onRemoveReaction, currentReaction }: ReactionPickerProps) => {
-    const [visibleRange, setVisibleRange] = useState({ start: 0, end: 8 });
+    const [_, setVisibleRange] = useState({ start: 0, end: 8 });
     const pickerRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [isVisible, setIsVisible] = useState(false);
@@ -99,7 +99,7 @@ const ReactionPicker = ({ isOpen, onClose, onSelectReaction, onRemoveReaction, c
                 onScroll={handleScroll}
             >
                 <div className="reactions-container">
-                    {REACTIONS.map((reaction, idx) => (
+                    {REACTIONS.map((reaction, _) => (
                         <div
                             key={reaction}
                             className={`reaction-option-horizontal ${currentReaction === reaction ? 'active' : ''}`}

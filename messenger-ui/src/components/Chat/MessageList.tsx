@@ -21,7 +21,7 @@ interface ReactionsMap {
     };
 }
 
-const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUserId, chatId, socket, onReactionChange, onOpenReactionPicker }: MessageListProps) => {
+const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUserId, chatId, socket, onOpenReactionPicker }: MessageListProps) => {
     const [reactionsMap, setReactionsMap] = useState<ReactionsMap>({});
     const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
     const [downloadingFiles, setDownloadingFiles] = useState<Set<number>>(new Set());

@@ -8,6 +8,8 @@ interface Message {
     senderName: string;
     chatId: string;
     timestamp: Date;
+    created_at: Date;
+    updated_at?: Date;
 }
 
 interface ChatInfo {
@@ -115,18 +117,6 @@ const SearchModal = ({ currentUserId, onClose, onOpenChat }: SearchModalProps) =
         }
         const otherParticipant = chat.participants.find(p => p.id !== currentUserId);
         return otherParticipant?.tag || '';
-    };
-
-    const formatDate = (date: Date) => {
-        const now = new Date();
-        const diff = now.getTime() - new Date(date).getTime();
-        const hours = diff / (1000 * 60 * 60);
-        
-        if (hours < 24) {
-            return new Date(date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-        } else {
-            return new Date(date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
-        }
     };
 
     const highlightText = (text: string, query: string) => {
