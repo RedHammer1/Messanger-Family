@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+    getChatIdByMessageId,
     createPrivateChat,
     createGroupChat,
     getUserChats,
@@ -22,11 +23,13 @@ import {
     removeReaction,
     getMessageReactions
 } from '../db/chatQueries';
+import { io } from '../server';
+
+
 
 const router = Router();
 
-// ============ ПОИСК (должен быть ПЕРВЫМ, чтобы не конфликтовать) ============
-
+// ============ ПОИСК ============
 // Поиск сообщений в конкретном чате
 router.get('/:userId/chat/:chatId/search', async (req, res) => {
     const userId = parseInt(req.params.userId);
@@ -310,8 +313,19 @@ router.post('/reaction/:messageId', async (req, res) => {
             return res.status(500).json({ error: 'Ошибка добавления реакции' });
         }
         
-        // Получаем обновлённые реакции для сообщения
         const reactions = await getMessageReactions(messageId);
+        const chatId = await getChatIdByMessageId(messageId);
+        
+        // Отправляем сокет-событие всем в комнате чата
+        if (chatId && io) {
+            io.to(chatId.toString()).emit('reaction_added', {
+                messageId: messageId.toString(),
+                reactions,
+                userId,
+                reaction
+            });
+        }
+        
         res.json({ message: 'Реакция добавлена', reactions });
     } catch (err) {
         console.error(err);
@@ -319,24 +333,33 @@ router.post('/reaction/:messageId', async (req, res) => {
     }
 });
 
+
 // Удаление реакции
 router.delete('/reaction/:messageId/:userId', async (req, res) => {
     const messageId = parseInt(req.params.messageId);
     const userId = parseInt(req.params.userId);
     
     try {
-        const success = await removeReaction(messageId, userId);
-        if (!success) {
-            return res.status(500).json({ error: 'Ошибка удаления реакции' });
+        await removeReaction(messageId, userId); // не проверяем success
+        const reactions = await getMessageReactions(messageId);
+        const chatId = await getChatIdByMessageId(messageId);
+        
+        if (chatId && io) {
+            io.to(chatId.toString()).emit('reaction_removed', {
+                messageId: messageId.toString(),
+                reactions,
+                userId
+            });
         }
         
-        const reactions = await getMessageReactions(messageId);
         res.json({ message: 'Реакция удалена', reactions });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Ошибка сервера' });
+        console.error('Ошибка удаления реакции:', err);
+        res.status(500).json({ error: 'Ошибка сервера при удалении реакции' });
     }
 });
+
+
 
 // Получение реакций для сообщения
 router.get('/reaction/:messageId', async (req, res) => {

@@ -214,8 +214,9 @@ const Chat = ({ currentUser, chatId, onBack }: ChatProps) => {
             <MessageList
                 messages={messages}
                 currentUserId={currentUser.id}
+                chatId={chatId}      
+                socket={socket}     
                 onReactionChange={(messageId, reaction) => {
-                    // Можно добавить дополнительную логику при изменении реакции
                     console.log(`Message ${messageId} reaction changed to ${reaction}`);
                 }}
             />

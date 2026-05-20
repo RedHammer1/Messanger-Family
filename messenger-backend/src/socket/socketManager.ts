@@ -34,4 +34,6 @@ export class SocketManager {
             chatsCount: chats.length
         };
     }
+
+    
 }

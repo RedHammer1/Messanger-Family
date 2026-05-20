@@ -28,6 +28,18 @@ interface SearchModalProps {
     onOpenChat: (chatId: number) => void;
 }
 
+const formatDateTime = (date: Date) => {
+    const d = date instanceof Date ? date : new Date(date);
+    if (isNaN(d.getTime())) return 'неизвестно';
+    return d.toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
+
+
 const SearchModal = ({ currentUserId, onClose, onOpenChat }: SearchModalProps) => {
     const [searchType, setSearchType] = useState<'messages' | 'chats'>('messages');
     const [query, setQuery] = useState('');
@@ -57,13 +69,24 @@ const SearchModal = ({ currentUserId, onClose, onOpenChat }: SearchModalProps) =
         try {
             const response = await fetch(`http://localhost:3001/api/chats/${currentUserId}/search/messages?q=${encodeURIComponent(query)}`);
             const data = await response.json();
-            setMessageResults(data);
+            const fixedData = data.map((item: any) => ({
+                ...item,
+                messages: item.messages.map((msg: any) => ({
+                    ...msg,
+                    timestamp: new Date(msg.created_at),
+                    id: msg.id.toString(),
+                    senderId: msg.sender_id.toString(),
+                }))
+            }));
+            setMessageResults(fixedData);
         } catch (err) {
             console.error('Ошибка поиска сообщений:', err);
         } finally {
             setLoading(false);
         }
     };
+
+
 
     const searchChats = async () => {
         setLoading(true);
@@ -179,9 +202,14 @@ const SearchModal = ({ currentUserId, onClose, onOpenChat }: SearchModalProps) =
                                         className="search-message-item"
                                         onClick={() => onOpenChat(result.chat.id)}
                                     >
-                                        <div className="message-header">
+                                      <div className="message-header">
                                             <span className="message-sender">{message.senderName}</span>
-                                            <span className="message-time">{formatDate(message.timestamp)}</span>
+                                            <span className="message-time">
+                                                {formatDateTime(new Date(message.created_at))}
+                                                {message.updated_at && new Date(message.updated_at).getTime() !== new Date(message.created_at).getTime() &&
+                                                    <span className="edited-indicator"> (ред.)</span>
+                                                }
+                                            </span>
                                         </div>
                                         <div className="message-text-preview">
                                             {highlightText(message.text, query)}

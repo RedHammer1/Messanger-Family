@@ -144,24 +144,26 @@ export class MessageHandler {
 
     private async handleAddReaction(socket: Socket, data: { messageId: string; userId: number; reaction: string; chatId: string }): Promise<void> {
         const { messageId, userId, reaction, chatId } = data;
-        
+        console.log(`add_reaction: messageId=${messageId}, userId=${userId}, reaction=${reaction}, chatId=${chatId}`);
         try {
             const success = await setReaction(parseInt(messageId), userId, reaction);
             if (success) {
                 const reactions = await getMessageReactions(parseInt(messageId));
                 const formattedReactions = reactions.map(r => ({
                     reaction: r.reaction,
-                    userId: r.user_id,
-                    userName: r.user_name
+                    user_id: r.user_id,
+                    user_name: r.user_name
                 }));
-                
-                // Отправляем обновлённые реакции всем в комнате чата
+                // Отправляем событие всем в комнате чата, включая отправителя
                 this.io.to(chatId).emit('reaction_added', {
                     messageId,
                     reactions: formattedReactions,
                     userId,
                     reaction
                 });
+                console.log(`Reaction added, emitted to room ${chatId}`);
+            } else {
+                console.error('Failed to set reaction');
             }
         } catch (err) {
             console.error('Ошибка добавления реакции:', err);
@@ -169,20 +171,18 @@ export class MessageHandler {
         }
     }
 
+
     private async handleRemoveReaction(socket: Socket, data: { messageId: string; userId: number; chatId: string }): Promise<void> {
         const { messageId, userId, chatId } = data;
-        
         try {
             const success = await removeReaction(parseInt(messageId), userId);
             if (success) {
                 const reactions = await getMessageReactions(parseInt(messageId));
                 const formattedReactions = reactions.map(r => ({
                     reaction: r.reaction,
-                    userId: r.user_id,
-                    userName: r.user_name
+                    user_id: r.user_id,
+                    user_name: r.user_name
                 }));
-                
-                // Отправляем обновлённые реакции всем в комнате чата
                 this.io.to(chatId).emit('reaction_removed', {
                     messageId,
                     reactions: formattedReactions,
@@ -194,6 +194,7 @@ export class MessageHandler {
             socket.emit('reaction_error', { message: 'Ошибка удаления реакции' });
         }
     }
+
 
     private async handleSendMessage(socket: Socket, messageData: { text: string; senderId: string; senderName: string; chatId: string }): Promise<void> {
         const { text, senderId, senderName, chatId } = messageData;

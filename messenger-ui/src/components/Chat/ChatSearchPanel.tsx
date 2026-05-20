@@ -11,6 +11,7 @@ interface ChatSearchPanelProps {
 }
 
 const ChatSearchPanel = ({ isOpen, onClose, chatId, currentUserId, onSearchResultClick }: ChatSearchPanelProps) => {
+
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
@@ -41,8 +42,18 @@ const ChatSearchPanel = ({ isOpen, onClose, chatId, currentUserId, onSearchResul
         try {
             const response = await fetch(`http://localhost:3001/api/chats/${currentUserId}/chat/${chatId}/search?q=${encodeURIComponent(searchQuery)}`);
             const data = await response.json();
-            setSearchResults(data);
-            setSelectedIndex(data.length > 0 ? 0 : -1);
+            const messages = data.map((msg: any) => ({
+                ...msg,
+                id: msg.id.toString(),
+                senderId: msg.sender_id.toString(),
+                senderName: msg.sender_name,
+                chatId: msg.chat_id.toString(),
+                createdAt: new Date(msg.created_at),
+                updatedAt: msg.updated_at ? new Date(msg.updated_at) : null,
+                text: msg.text,
+            }));
+            setSearchResults(messages);
+            setSelectedIndex(messages.length > 0 ? 0 : -1);
         } catch (err) {
             console.error('Ошибка поиска:', err);
         } finally {
@@ -50,21 +61,26 @@ const ChatSearchPanel = ({ isOpen, onClose, chatId, currentUserId, onSearchResul
         }
     };
 
+
+
+
     const handleResultClick = (messageId: string) => {
         onSearchResultClick(messageId);
     };
 
-    const formatDate = (date: Date) => {
-        const now = new Date();
-        const diff = now.getTime() - new Date(date).getTime();
-        const hours = diff / (1000 * 60 * 60);
-        
-        if (hours < 24) {
-            return new Date(date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-        } else {
-            return new Date(date).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
-        }
+    const formatDateTime = (date: Date) => {
+        const d = date instanceof Date ? date : new Date(date);
+        if (isNaN(d.getTime())) return 'неизвестно';
+        return d.toLocaleString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
     };
+
+
+
 
     const highlightText = (text: string, query: string) => {
         if (!query) return text;
@@ -74,6 +90,7 @@ const ChatSearchPanel = ({ isOpen, onClose, chatId, currentUserId, onSearchResul
             regex.test(part) ? <mark key={i} className="search-highlight">{part}</mark> : part
         );
     };
+
 
     return (
         <>
@@ -123,7 +140,12 @@ const ChatSearchPanel = ({ isOpen, onClose, chatId, currentUserId, onSearchResul
                                     >
                                         <div className="result-item-header">
                                             <span className="result-sender">{message.senderName}</span>
-                                            <span className="result-time">{formatDate(message.timestamp)}</span>
+                                            <span className="result-time">
+                                                {formatDateTime(message.createdAt)}
+                                                {message.updatedAt && message.updatedAt.getTime() !== message.createdAt.getTime() && 
+                                                    <span className="edited-indicator"> (ред.)</span>
+                                                }
+                                            </span>
                                         </div>
                                         <div className="result-text">
                                             {highlightText(message.text, searchQuery)}

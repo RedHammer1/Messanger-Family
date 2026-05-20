@@ -39,8 +39,12 @@ export interface Message {
     senderName: string;
     chatId: string;
     timestamp: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
     isOwn?: boolean;
     hasAttachments?: boolean;
+    reactions?: any[];
+    userReaction?: string;
     files?: MessageFile[];
 }
 

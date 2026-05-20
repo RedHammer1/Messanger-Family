@@ -728,7 +728,7 @@ export async function removeReaction(messageId: number, userId: number): Promise
             `DELETE FROM message_reactions WHERE message_id = $1 AND user_id = $2`,
             [messageId, userId]
         );
-        return (result.rowCount || 0) > 0;
+        return (result.rowCount ?? 0) > 0;
     } catch (err) {
         console.error('Ошибка удаления реакции:', err);
         return false;
@@ -736,6 +736,7 @@ export async function removeReaction(messageId: number, userId: number): Promise
         client.release();
     }
 }
+
 
 // Получение всех реакций для сообщения
 export async function getMessageReactions(messageId: number): Promise<Reaction[]> {
@@ -802,6 +803,16 @@ export async function getMessageFiles(messageIds: number[]): Promise<Map<number,
             filesMap.get(row.message_id)!.push(row);
         }
         return filesMap;
+    } finally {
+        client.release();
+    }
+}
+
+export async function getChatIdByMessageId(messageId: number): Promise<number | null> {
+    const client = await pool.connect();
+    try {
+        const res = await client.query(`SELECT chat_id FROM messages WHERE id = $1`, [messageId]);
+        return res.rows[0]?.chat_id || null;
     } finally {
         client.release();
     }

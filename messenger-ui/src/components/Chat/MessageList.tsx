@@ -24,47 +24,57 @@ interface ReactionsMap {
 const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUserId, chatId, socket, onReactionChange, onOpenReactionPicker }: MessageListProps) => {
     const [reactionsMap, setReactionsMap] = useState<ReactionsMap>({});
     const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
-    const [loadingReactions, setLoadingReactions] = useState<Set<string>>(new Set());
     const [downloadingFiles, setDownloadingFiles] = useState<Set<number>>(new Set());
+
+    useEffect(() => {
+        // Инициализируем реакции из пришедших сообщений
+        const newReactionsMap: ReactionsMap = {};
+        messages.forEach(msg => {
+            if (msg.reactions && msg.reactions.length > 0) {
+                newReactionsMap[msg.id] = {
+                    reactions: msg.reactions,
+                    userReaction: msg.userReaction
+                };
+            }
+        });
+        setReactionsMap(prev => ({ ...prev, ...newReactionsMap }));
+    }, [messages]);
 
     // Подписка на WebSocket события реакций
     useEffect(() => {
         if (!socket) return;
 
-        const handleReactionUpdated = (data: { messageId: string; reactions: any[]; userId: number; reaction: string }) => {
+            const handleReactionAdded = (data: { messageId: string; reactions: any[]; userId: number }) => {
             setReactionsMap(prev => {
-                const userReaction = data.reactions.find((r: any) => r.user_id === currentUserId)?.reaction;
+                const userReaction = data.reactions.find(r => r.user_id === currentUserId)?.reaction;
                 return {
                     ...prev,
-                    [data.messageId]: {
-                        reactions: data.reactions,
-                        userReaction
-                    }
+                    [data.messageId]: { reactions: data.reactions, userReaction }
                 };
             });
         };
 
         const handleReactionRemoved = (data: { messageId: string; reactions: any[]; userId: number }) => {
             setReactionsMap(prev => {
-                const userReaction = data.reactions.find((r: any) => r.user_id === currentUserId)?.reaction;
+                const userReaction = data.reactions.find(r => r.user_id === currentUserId)?.reaction;
                 return {
                     ...prev,
-                    [data.messageId]: {
-                        reactions: data.reactions,
-                        userReaction
-                    }
+                    [data.messageId]: { reactions: data.reactions, userReaction }
                 };
             });
         };
 
-        socket.on('reaction_updated', handleReactionUpdated);
+        socket.on('reaction_added', handleReactionAdded);
         socket.on('reaction_removed', handleReactionRemoved);
 
         return () => {
-            socket.off('reaction_updated', handleReactionUpdated);
+            socket.off('reaction_added', handleReactionAdded);
             socket.off('reaction_removed', handleReactionRemoved);
         };
+
     }, [socket, currentUserId]);
+
+
 
     // Функция для скачивания файла
     const handleDownloadFile = async (messageId: string, fileId: number, fileName: string) => {
@@ -118,41 +128,8 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
-    const loadReactions = async (messageId: string) => {
-        if (reactionsMap[messageId] || loadingReactions.has(messageId)) return;
-        
-        setLoadingReactions(prev => new Set(prev).add(messageId));
-        try {
-            const response = await fetch(`http://localhost:3001/api/chats/reaction/${messageId}`);
-            const data = await response.json();
-            
-            const userReaction = data.find((r: any) => r.user_id === currentUserId)?.reaction;
-            
-            setReactionsMap(prev => ({
-                ...prev,
-                [messageId]: {
-                    reactions: data,
-                    userReaction
-                }
-            }));
-        } catch (err) {
-            console.error('Ошибка загрузки реакций:', err);
-        } finally {
-            setLoadingReactions(prev => {
-                const newSet = new Set(prev);
-                newSet.delete(messageId);
-                return newSet;
-            });
-        }
-    };
-
     const handleMessageClick = (event: React.MouseEvent, messageId: string) => {
         event.stopPropagation();
-        
-        if (!reactionsMap[messageId]) {
-            loadReactions(messageId);
-        }
-        
         setSelectedMessageId(messageId);
         if (onOpenReactionPicker) {
             onOpenReactionPicker(messageId);
@@ -170,6 +147,9 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
                 chatId: chatId
             });
         }
+        else {
+            console.warn('Socket not connected');
+        }
         
         try {
             await fetch(`http://localhost:3001/api/chats/reaction/${selectedMessageId}`, {
@@ -185,22 +165,31 @@ const MessageList = ({ messages, searchQuery = '', searchResults = [], currentUs
     const handleRemoveReaction = async () => {
         if (!selectedMessageId) return;
         
-        if (socket) {
+        // Сначала отправляем через сокет
+        if (socket && socket.connected) {
             socket.emit('remove_reaction', {
                 messageId: parseInt(selectedMessageId),
                 userId: currentUserId,
                 chatId: chatId
             });
+        } else {
+            console.warn('Socket not connected, using HTTP DELETE');
         }
         
+        // Резервный HTTP-запрос
         try {
-            await fetch(`http://localhost:3001/api/chats/reaction/${selectedMessageId}/${currentUserId}`, {
+            const response = await fetch(`http://localhost:3001/api/chats/reaction/${selectedMessageId}/${currentUserId}`, {
                 method: 'DELETE'
             });
+            if (!response.ok) {
+                const err = await response.json();
+                console.error('HTTP delete reaction error:', err);
+            }
         } catch (err) {
-            console.error('Ошибка удаления реакции:', err);
+            console.error('Ошибка удаления реакции (HTTP):', err);
         }
     };
+
 
     const handleClosePicker = () => {
         setSelectedMessageId(null);
