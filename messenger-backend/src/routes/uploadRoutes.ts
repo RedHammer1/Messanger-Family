@@ -7,7 +7,8 @@ import { pool } from '../db/index';
 
 const router = Router();
 
-// Настройка хранилища для файлов
+// Настройка хранилища для multer: файлы сохраняются в папку uploads/{chatId}
+// Имя файла генерируется через UUID для избежания коллизий
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const chatId = req.params.chatId as string;
@@ -24,7 +25,7 @@ const storage = multer.diskStorage({
     }
 });
 
-// Фильтр файлов
+// Фильтр файлов: разрешаем только изображения, видео, документы (50 МБ максимум)
 const fileFilter = (req: any, file: any, cb: any) => {
     const allowedTypes = /jpeg|jpg|png|gif|mp4|webm|pdf|doc|docx|txt|zip/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());

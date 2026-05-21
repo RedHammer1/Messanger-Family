@@ -33,20 +33,20 @@ export interface MessageFile {
 }
 
 export interface Message {
-    id: string;
-    text: string;
-    senderId: string;
-    senderName: string;
-    chatId: string;
-    timestamp: Date;
-    createdAt: Date;
-    updatedAt?: Date;
-    isOwn?: boolean;
-    hasAttachments?: boolean;
-    reactions?: any[];
-    userReaction?: string;
-    files?: MessageFile[];
+  id: string;
+  text: string;
+  senderId: string;
+  senderName: string;
+  chatId: string;
+  timestamp: Date;
+  createdAt: Date;
+  updatedAt?: Date;
+  isOwn?: boolean;
+  reactions?: any[];
+  files?: any[];
+  userReaction?: string;
 }
+
 
 
 export interface Chat {
