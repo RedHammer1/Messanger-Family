@@ -7,17 +7,22 @@ import { pool } from '../db/index';
 
 const router = Router();
 
-// Настройка хранилища для multer: файлы сохраняются в папку uploads/{chatId}
-// Имя файла генерируется через UUID для избежания коллизий
+// Создаем директорию для uploads, если её нет
+const uploadsDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Настройка хранилища для файлов
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const chatId = req.params.chatId as string;
-        const uploadDir = path.join(__dirname, '../../uploads', chatId);
+        const chatId = req.params.chatId;
+        const chatUploadDir = path.join(uploadsDir, chatId as string);
         
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
+        if (!fs.existsSync(chatUploadDir)) {
+            fs.mkdirSync(chatUploadDir, { recursive: true });
         }
-        cb(null, uploadDir);
+        cb(null, chatUploadDir);
     },
     filename: (req, file, cb) => {
         const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
@@ -25,14 +30,14 @@ const storage = multer.diskStorage({
     }
 });
 
-// Фильтр файлов: разрешаем только изображения, видео, документы (50 МБ максимум)
+// Фильтр файлов
 const fileFilter = (req: any, file: any, cb: any) => {
     const allowedTypes = /jpeg|jpg|png|gif|mp4|webm|pdf|doc|docx|txt|zip/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     
     if (mimetype && extname) {
-        return cb(null, true);
+        cb(null, true);
     } else {
         cb(new Error('Неподдерживаемый тип файла'));
     }
@@ -75,8 +80,9 @@ router.post('/:chatId/upload/:userId', upload.single('file'), async (req, res) =
         
         // Создаём сообщение с файлом
         const fileType = getFileType(req.file.mimetype);
-        let text = '';
         
+        // Определяем текст сообщения в зависимости от типа файла
+        let text = '';
         if (fileType === 'image') {
             text = '📷 Изображение';
         } else if (fileType === 'video') {
@@ -86,21 +92,23 @@ router.post('/:chatId/upload/:userId', upload.single('file'), async (req, res) =
         }
         
         const messageResult = await client.query(
-            `INSERT INTO messages (chat_id, sender_id, text, has_attachments) 
-             VALUES ($1, $2, $3, true) 
+            `INSERT INTO messages (chat_id, sender_id, text, has_attachments, has_files) 
+             VALUES ($1, $2, $3, true, true) 
              RETURNING *`,
             [chatId, userId, text]
         );
         
         const message = messageResult.rows[0];
         
-        // Сохраняем информацию о файле
+        // Сохраняем информацию о файле с правильным путем
         const relativePath = `/uploads/${chatId}/${req.file.filename}`;
+        const fullPath = `/uploads/${chatId}/${req.file.filename}`;
         
-        await client.query(
+        const fileResult = await client.query(
             `INSERT INTO message_files (message_id, file_name, file_path, file_size, file_type, mime_type) 
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [message.id, req.file.originalname, relativePath, req.file.size, fileType, req.file.mimetype]
+             VALUES ($1, $2, $3, $4, $5, $6) 
+             RETURNING *`,
+            [message.id, req.file.originalname, fullPath, req.file.size, fileType, req.file.mimetype]
         );
         
         // Обновляем updated_at чата
@@ -124,9 +132,9 @@ router.post('/:chatId/upload/:userId', upload.single('file'), async (req, res) =
             timestamp: message.created_at,
             hasAttachments: true,
             file: {
-                id: message.id,
+                id: fileResult.rows[0].id,
                 fileName: req.file.originalname,
-                filePath: relativePath,
+                filePath: fullPath,
                 fileSize: req.file.size,
                 fileType: fileType,
                 mimeType: req.file.mimetype
@@ -146,10 +154,26 @@ router.post('/:chatId/upload/:userId', upload.single('file'), async (req, res) =
     }
 });
 
-// ============ НОВЫЙ ENDPOINT ДЛЯ СКАЧИВАНИЯ ФАЙЛА ============
+// Получение файла для отображения
+router.get('/file/:chatId/:filename', async (req, res) => {
+    const chatId = req.params.chatId;
+    const filename = req.params.filename;
+    const filePath = path.join(uploadsDir, chatId, filename);
+    
+    console.log('Requesting file:', filePath);
+    
+    if (!fs.existsSync(filePath)) {
+        console.error('File not found:', filePath);
+        return res.status(404).json({ error: 'Файл не найден' });
+    }
+    
+    res.sendFile(filePath);
+});
+
+// Скачивание файла
 router.get('/download/:messageId/:fileId', async (req, res) => {
-    const messageId = parseInt(req.params.messageId as string);
-    const fileId = parseInt(req.params.fileId as string);
+    const messageId = parseInt(req.params.messageId);
+    const fileId = parseInt(req.params.fileId);
     const userId = req.headers['x-user-id'] ? parseInt(req.headers['x-user-id'] as string) : null;
     
     if (!userId) {
@@ -159,7 +183,6 @@ router.get('/download/:messageId/:fileId', async (req, res) => {
     const client = await pool.connect();
     
     try {
-        // Получаем информацию о файле
         const fileResult = await client.query(
             `SELECT mf.*, m.chat_id 
              FROM message_files mf
@@ -174,7 +197,6 @@ router.get('/download/:messageId/:fileId', async (req, res) => {
         
         const file = fileResult.rows[0];
         
-        // Проверяем, имеет ли пользователь доступ к чату
         const participantCheck = await client.query(
             `SELECT id FROM chat_participants WHERE chat_id = $1 AND user_id = $2`,
             [file.chat_id, userId]
@@ -184,27 +206,16 @@ router.get('/download/:messageId/:fileId', async (req, res) => {
             return res.status(403).json({ error: 'Доступ запрещён' });
         }
         
-        // Полный путь к файлу на сервере
-        const filePath = path.join(__dirname, '../../', file.file_path);
+        // Извлекаем filename из file_path
+        const filename = file.file_path.split('/').pop();
+        const filePath = path.join(uploadsDir, file.chat_id.toString(), filename);
         
         if (!fs.existsSync(filePath)) {
+            console.error('File not found:', filePath);
             return res.status(404).json({ error: 'Файл не найден на сервере' });
         }
         
-        // Устанавливаем заголовки для скачивания
-        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.file_name)}"`);
-        res.setHeader('Content-Type', file.mime_type);
-        res.setHeader('Content-Length', file.file_size);
-        
-        // Отправляем файл
-        res.download(filePath, file.file_name, (err) => {
-            if (err) {
-                console.error('Ошибка при скачивании файла:', err);
-                if (!res.headersSent) {
-                    res.status(500).json({ error: 'Ошибка при скачивании файла' });
-                }
-            }
-        });
+        res.download(filePath, file.file_name);
         
     } catch (err) {
         console.error('Ошибка скачивания файла:', err);
@@ -214,10 +225,10 @@ router.get('/download/:messageId/:fileId', async (req, res) => {
     }
 });
 
-// ============ Эндпоинт для получения информации о файле ============
+// Получение информации о файле
 router.get('/info/:messageId/:fileId', async (req, res) => {
-    const messageId = parseInt(req.params.messageId as string);
-    const fileId = parseInt(req.params.fileId as string);
+    const messageId = parseInt(req.params.messageId);
+    const fileId = parseInt(req.params.fileId);
     const userId = req.headers['x-user-id'] ? parseInt(req.headers['x-user-id'] as string) : null;
     
     if (!userId) {
@@ -241,7 +252,6 @@ router.get('/info/:messageId/:fileId', async (req, res) => {
         
         const file = fileResult.rows[0];
         
-        // Проверяем доступ
         const participantCheck = await client.query(
             `SELECT id FROM chat_participants WHERE chat_id = $1 AND user_id = $2`,
             [file.chat_id, userId]
@@ -257,6 +267,7 @@ router.get('/info/:messageId/:fileId', async (req, res) => {
             fileSize: file.file_size,
             fileType: file.file_type,
             mimeType: file.mime_type,
+            filePath: file.file_path,
             downloadUrl: `/api/upload/download/${messageId}/${fileId}`
         });
         
@@ -268,22 +279,9 @@ router.get('/info/:messageId/:fileId', async (req, res) => {
     }
 });
 
-// Получение файла для отображения (просмотр, не скачивание)
-router.get('/file/:chatId/:filename', async (req, res) => {
-    const chatId = req.params.chatId as string;
-    const filename = req.params.filename as string;
-    const filePath = path.join(__dirname, '../../uploads', chatId, filename);
-    
-    if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ error: 'Файл не найден' });
-    }
-    
-    res.sendFile(filePath);
-});
-
 // Получение файлов сообщения
 router.get('/message/:messageId/files', async (req, res) => {
-    const messageId = parseInt(req.params.messageId as string);
+    const messageId = parseInt(req.params.messageId);
     const client = await pool.connect();
     
     try {
@@ -294,55 +292,6 @@ router.get('/message/:messageId/files', async (req, res) => {
         res.json(result.rows);
     } catch (err) {
         console.error('Ошибка получения файлов:', err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    } finally {
-        client.release();
-    }
-});
-
-// Удаление файла сообщения
-router.delete('/:messageId/file/:fileId', async (req, res) => {
-    const messageId = parseInt(req.params.messageId as string);
-    const fileId = parseInt(req.params.fileId as string);
-    const userId = parseInt(req.headers['x-user-id'] as string);
-    
-    const client = await pool.connect();
-    
-    try {
-        const messageCheck = await client.query(
-            `SELECT sender_id, chat_id FROM messages WHERE id = $1`,
-            [messageId]
-        );
-        
-        if (messageCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Сообщение не найдено' });
-        }
-        
-        if (messageCheck.rows[0].sender_id !== userId) {
-            return res.status(403).json({ error: 'Вы не можете удалить этот файл' });
-        }
-        
-        const fileResult = await client.query(
-            `SELECT file_path FROM message_files WHERE id = $1 AND message_id = $2`,
-            [fileId, messageId]
-        );
-        
-        if (fileResult.rows.length > 0) {
-            const filePath = path.join(__dirname, '../../', fileResult.rows[0].file_path);
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
-        }
-        
-        await client.query(
-            `DELETE FROM message_files WHERE id = $1 AND message_id = $2`,
-            [fileId, messageId]
-        );
-        
-        res.json({ message: 'Файл удалён' });
-        
-    } catch (err) {
-        console.error('Ошибка удаления файла:', err);
         res.status(500).json({ error: 'Ошибка сервера' });
     } finally {
         client.release();

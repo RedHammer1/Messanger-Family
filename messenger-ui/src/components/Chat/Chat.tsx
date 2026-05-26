@@ -81,7 +81,7 @@ const Chat = () => {
       });
     });
 
-    newSocket.on('chat_history', (history: any[]) => {
+newSocket.on('chat_history', (history: any[]) => {
   console.log('Received chat_history:', history.length);
   const formatted: Message[] = history.map(msg => ({
     id: msg.id.toString(),
@@ -95,10 +95,12 @@ const Chat = () => {
     isOwn: (msg.senderId || msg.sender_id?.toString()) === currentUser.id.toString(),
     reactions: msg.reactions || [],
     userReaction: msg.userReaction,
-    files: msg.files || [],
+    files: msg.files || [], // Убедитесь, что files приходит с сервера
+    hasAttachments: msg.hasAttachments || (msg.files && msg.files.length > 0)
   }));
   setMessages(formatted);
 });
+
 
 newSocket.on('new_message', (message: any) => {
   console.log('New message received:', message);

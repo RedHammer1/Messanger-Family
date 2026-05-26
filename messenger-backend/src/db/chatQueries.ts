@@ -442,13 +442,13 @@ export async function getChatMessages(chatId: number, limit: number = 50, offset
             `SELECT m.*, u.name as sender_name
              FROM messages m
              JOIN users u ON m.sender_id = u.id
-             WHERE m.chat_id = $1
-             ORDER BY m.created_at ASC
+             WHERE m.chat_id = $1 AND m.is_deleted = false
+             ORDER BY m.created_at DESC
              LIMIT $2 OFFSET $3`,
             [chatId, limit, offset]
         );
         
-        const messages = result.rows;
+        const messages = result.rows.reverse(); // Возвращаем в хронологическом порядке
         
         if (messages.length === 0) return [];
         
@@ -490,7 +490,16 @@ export async function getChatMessages(chatId: number, limit: number = 50, offset
         
         // Добавляем реакции и файлы к каждому сообщению
         const messagesWithData = messages.map(msg => ({
-            ...msg,
+            id: msg.id,
+            chat_id: msg.chat_id,
+            sender_id: msg.sender_id,
+            sender_name: msg.sender_name,
+            text: msg.text,
+            created_at: msg.created_at,
+            updated_at: msg.updated_at,
+            is_deleted: msg.is_deleted,
+            has_attachments: msg.has_attachments,
+            has_files: msg.has_files,
             reactions: reactionsMap.get(msg.id) || [],
             user_reaction: userId ? reactionsMap.get(msg.id)?.find(r => r.user_id === userId)?.reaction : undefined,
             files: filesMap.get(msg.id) || []
@@ -501,6 +510,7 @@ export async function getChatMessages(chatId: number, limit: number = 50, offset
         client.release();
     }
 }
+
 
 
 // Поиск чата по имени (для групповых чатов)

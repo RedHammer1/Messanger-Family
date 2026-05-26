@@ -43,8 +43,9 @@ export interface Message {
   updatedAt?: Date;
   isOwn?: boolean;
   reactions?: any[];
-  files?: any[];
+  files?: MessageFile[];
   userReaction?: string;
+  hasAttachments?: boolean;
 }
 
 

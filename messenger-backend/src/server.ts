@@ -47,6 +47,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 //Проверяем статус здоровья сервера
 app.get('/api/health', (req, res) => {
