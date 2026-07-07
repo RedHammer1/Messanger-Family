@@ -24,7 +24,7 @@ const GroupInfoModal = ({ chatId, currentUserId, chatName, participants, onClose
 
     const fetchUserRole = async () => {
         try {
-            const response = await fetch(`http://localhost:3001/api/chats/${currentUserId}/chat/${chatId}/role`);
+            const response = await fetch(`http://localhost:3306/api/chats/${currentUserId}/chat/${chatId}/role`);
             const data = await response.json();
             setUserRole(data.role);
         } catch (err) {
@@ -38,7 +38,7 @@ const GroupInfoModal = ({ chatId, currentUserId, chatName, participants, onClose
             return;
         }
         try {
-            const response = await fetch(`http://localhost:3001/api/users/search?q=${encodeURIComponent(query)}`, {
+            const response = await fetch(`http://localhost:3306/api/users/search?q=${encodeURIComponent(query)}`, {
                 headers: { 'X-User-Id': currentUserId.toString() }
             });
             const data = await response.json();
@@ -53,7 +53,7 @@ const GroupInfoModal = ({ chatId, currentUserId, chatName, participants, onClose
     const addParticipant = async (targetUserId: number) => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:3001/api/chats/group/${chatId}/add-participant`, {
+            const response = await fetch(`http://localhost:3306/api/chats/group/${chatId}/add-participant`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetUserId, currentUserId })
@@ -78,7 +78,7 @@ const GroupInfoModal = ({ chatId, currentUserId, chatName, participants, onClose
         
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:3001/api/chats/group/${chatId}/remove-participant`, {
+            const response = await fetch(`http://localhost:3306/api/chats/group/${chatId}/remove-participant`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetUserId, currentUserId })
@@ -99,7 +99,7 @@ const GroupInfoModal = ({ chatId, currentUserId, chatName, participants, onClose
     const setAsModerator = async (targetUserId: number) => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:3001/api/chats/group/${chatId}/moderator`, {
+            const response = await fetch(`http://localhost:3306/api/chats/group/${chatId}/moderator`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetUserId, currentUserId })
@@ -120,7 +120,7 @@ const GroupInfoModal = ({ chatId, currentUserId, chatName, participants, onClose
     const removeModerator = async (targetUserId: number) => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:3001/api/chats/group/${chatId}/moderator`, {
+            const response = await fetch(`http://localhost:3306/api/chats/group/${chatId}/moderator`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetUserId, currentUserId })
@@ -143,7 +143,7 @@ const GroupInfoModal = ({ chatId, currentUserId, chatName, participants, onClose
         
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:3001/api/chats/group/${chatId}/leave`, {
+            const response = await fetch(`http://localhost:3306/api/chats/group/${chatId}/leave`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUserId })
@@ -167,7 +167,7 @@ const GroupInfoModal = ({ chatId, currentUserId, chatName, participants, onClose
         
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:3001/api/chats/group/${chatId}/${currentUserId}`, {
+            const response = await fetch(`http://localhost:3306/api/chats/group/${chatId}/${currentUserId}`, {
                 method: 'DELETE'
             });
             if (response.ok) {

@@ -53,26 +53,6 @@ CREATE TABLE IF NOT EXISTS messages (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS message_reactions (
-    id SERIAL PRIMARY KEY,
-    message_id INTEGER REFERENCES messages(id) ON DELETE CASCADE,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    reaction VARCHAR(10) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(message_id, user_id)
-);
-
-CREATE TABLE IF NOT EXISTS message_files (
-    id SERIAL PRIMARY KEY,
-    message_id INTEGER REFERENCES messages(id) ON DELETE CASCADE,
-    file_name VARCHAR(255) NOT NULL,
-    file_path VARCHAR(500) NOT NULL,
-    file_size INTEGER NOT NULL,
-    file_type VARCHAR(50) NOT NULL, -- 'image', 'video', 'document'
-    mime_type VARCHAR(100) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE INDEX IF NOT EXISTS idx_message_reactions_message_id ON message_reactions(message_id);
 CREATE INDEX IF NOT EXISTS idx_message_reactions_user_id ON message_reactions(user_id);
 
@@ -83,4 +63,18 @@ CREATE INDEX IF NOT EXISTS idx_chat_participants_user_id ON chat_participants(us
 
 CREATE INDEX IF NOT EXISTS idx_contacts_user_id ON contacts(user_id);
 CREATE INDEX IF NOT EXISTS idx_contacts_contact_id ON contacts(contact_id);
+
+ALTER TABLE messages DROP CONSTRAINT IF EXISTS messages_chat_id_fkey;
+ALTER TABLE chat_participants DROP CONSTRAINT IF EXISTS chat_participants_chat_id_fkey;
+ALTER TABLE message_reactions DROP CONSTRAINT IF EXISTS message_reactions_message_id_fkey;
+ALTER TABLE message_files DROP CONSTRAINT IF EXISTS message_files_message_id_fkey;
+
+-- Добавляем новые с CASCADE
+ALTER TABLE messages 
+    ADD CONSTRAINT messages_chat_id_fkey 
+    FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE;
+
+ALTER TABLE chat_participants 
+    ADD CONSTRAINT chat_participants_chat_id_fkey 
+    FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE;
 

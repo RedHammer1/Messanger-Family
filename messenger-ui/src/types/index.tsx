@@ -21,34 +21,15 @@ export interface ChatParticipant {
     role: 'creator' | 'moderator' | 'member';
 }
 
-export interface MessageFile {
-    id: number;
-    message_id: number;
-    file_name: string;
-    file_path: string;
-    file_size: number;
-    file_type: 'image' | 'video' | 'document';
-    mime_type: string;
-    created_at: Date;
-}
-
 export interface Message {
-  id: string;
-  text: string;
-  senderId: string;
-  senderName: string;
-  chatId: string;
-  timestamp: Date;
-  createdAt: Date;
-  updatedAt?: Date;
-  isOwn?: boolean;
-  reactions?: any[];
-  files?: MessageFile[];
-  userReaction?: string;
-  hasAttachments?: boolean;
+    id: string;
+    text: string;
+    senderId: string;
+    senderName: string;
+    chatId: string;
+    timestamp: Date;
+    isOwn?: boolean;
 }
-
-
 
 export interface Chat {
     id: number;

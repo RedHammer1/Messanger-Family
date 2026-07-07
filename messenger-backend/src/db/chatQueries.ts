@@ -1,6 +1,5 @@
 import { pool } from './index';
 
-
 export interface Chat {
     id: number;
     name: string | null;
@@ -28,8 +27,6 @@ export interface Message {
     text: string;
     created_at: Date;
     updated_at: Date;
-    reactions?: Reaction[];
-    user_reaction?: string;
 }
 
 export interface ChatWithDetails extends Chat {
@@ -423,9 +420,7 @@ export async function saveMessage(chatId: number, senderId: number, text: string
         
         return {
             ...message,
-            sender_name: senderResult.rows[0]?.name,
-            reactions: [],
-            user_reaction: undefined
+            sender_name: senderResult.rows[0]?.name
         };
     } finally {
         client.release();
@@ -442,75 +437,29 @@ export async function getChatMessages(chatId: number, limit: number = 50, offset
             `SELECT m.*, u.name as sender_name
              FROM messages m
              JOIN users u ON m.sender_id = u.id
-             WHERE m.chat_id = $1 AND m.is_deleted = false
-             ORDER BY m.created_at DESC
+             WHERE m.chat_id = $1
+             ORDER BY m.created_at ASC
              LIMIT $2 OFFSET $3`,
             [chatId, limit, offset]
         );
         
-        const messages = result.rows.reverse(); // Возвращаем в хронологическом порядке
+        const messages = result.rows;
         
         if (messages.length === 0) return [];
         
         // Получаем ID всех сообщений
         const messageIds = messages.map(m => m.id);
         
-        // Получаем реакции для всех сообщений
-        const reactionsResult = await client.query(
-            `SELECT r.*, u.name as user_name
-             FROM message_reactions r
-             JOIN users u ON r.user_id = u.id
-             WHERE r.message_id = ANY($1::int[])`,
-            [messageIds]
-        );
-        
-        // Получаем файлы для всех сообщений
-        const filesResult = await client.query(
-            `SELECT * FROM message_files WHERE message_id = ANY($1::int[])`,
-            [messageIds]
-        );
-        
-        // Группируем реакции по message_id
-        const reactionsMap = new Map<number, Reaction[]>();
-        for (const reaction of reactionsResult.rows) {
-            if (!reactionsMap.has(reaction.message_id)) {
-                reactionsMap.set(reaction.message_id, []);
-            }
-            reactionsMap.get(reaction.message_id)!.push(reaction);
-        }
-        
-        // Группируем файлы по message_id
-        const filesMap = new Map<number, any[]>();
-        for (const file of filesResult.rows) {
-            if (!filesMap.has(file.message_id)) {
-                filesMap.set(file.message_id, []);
-            }
-            filesMap.get(file.message_id)!.push(file);
-        }
-        
-        // Добавляем реакции и файлы к каждому сообщению
-        const messagesWithData = messages.map(msg => ({
-            id: msg.id,
-            chat_id: msg.chat_id,
-            sender_id: msg.sender_id,
-            sender_name: msg.sender_name,
-            text: msg.text,
-            created_at: msg.created_at,
-            updated_at: msg.updated_at,
-            is_deleted: msg.is_deleted,
-            has_attachments: msg.has_attachments,
-            has_files: msg.has_files,
-            reactions: reactionsMap.get(msg.id) || [],
-            user_reaction: userId ? reactionsMap.get(msg.id)?.find(r => r.user_id === userId)?.reaction : undefined,
-            files: filesMap.get(msg.id) || []
+        // Добавляем реакции к каждому сообщению
+        const message = messages.map(msg => ({
+            ...msg
         }));
         
-        return messagesWithData;
+        return message;
     } finally {
         client.release();
     }
 }
-
 
 
 // Поиск чата по имени (для групповых чатов)
@@ -695,135 +644,6 @@ export async function searchMessagesAllChats(userId: number, query: string): Pro
         }
         
         return results;
-    } finally {
-        client.release();
-    }
-}
-
-////////////////////////////// REACTION///////////////////////////////////////////
-//интерфейс для реакции
-export interface Reaction {
-    id: number;
-    message_id: number;
-    user_id: number;
-    reaction: string;
-    created_at: Date;
-    user_name?: string;
-}
-
-// Добавление или обновление реакции
-export async function setReaction(messageId: number, userId: number, reaction: string): Promise<boolean> {
-    const client = await pool.connect();
-    try {
-        await client.query(
-            `INSERT INTO message_reactions (message_id, user_id, reaction) 
-             VALUES ($1, $2, $3) 
-             ON CONFLICT (message_id, user_id) 
-             DO UPDATE SET reaction = $3, created_at = CURRENT_TIMESTAMP`,
-            [messageId, userId, reaction]
-        );
-        return true;
-    } catch (err) {
-        console.error('Ошибка добавления реакции:', err);
-        return false;
-    } finally {
-        client.release();
-    }
-}
-
-// Удаление реакции
-export async function removeReaction(messageId: number, userId: number): Promise<boolean> {
-    const client = await pool.connect();
-    try {
-        const result = await client.query(
-            `DELETE FROM message_reactions WHERE message_id = $1 AND user_id = $2`,
-            [messageId, userId]
-        );
-        return (result.rowCount ?? 0) > 0;
-    } catch (err) {
-        console.error('Ошибка удаления реакции:', err);
-        return false;
-    } finally {
-        client.release();
-    }
-}
-
-
-// Получение всех реакций для сообщения
-export async function getMessageReactions(messageId: number): Promise<Reaction[]> {
-    const client = await pool.connect();
-    try {
-        const result = await client.query(
-            `SELECT r.*, u.name as user_name
-             FROM message_reactions r
-             JOIN users u ON r.user_id = u.id
-             WHERE r.message_id = $1`,
-            [messageId]
-        );
-        return result.rows;
-    } finally {
-        client.release();
-    }
-}
-
-// Получение реакций для нескольких сообщений (для оптимизации)
-export async function getMessagesReactions(messageIds: number[]): Promise<Map<number, Reaction[]>> {
-    if (messageIds.length === 0) return new Map();
-    
-    const client = await pool.connect();
-    try {
-        const result = await client.query(
-            `SELECT r.*, u.name as user_name
-             FROM message_reactions r
-             JOIN users u ON r.user_id = u.id
-             WHERE r.message_id = ANY($1::int[])`,
-            [messageIds]
-        );
-        
-        const reactionsMap = new Map<number, Reaction[]>();
-        for (const row of result.rows) {
-            const messageId = row.message_id;
-            if (!reactionsMap.has(messageId)) {
-                reactionsMap.set(messageId, []);
-            }
-            reactionsMap.get(messageId)!.push(row);
-        }
-        return reactionsMap;
-    } finally {
-        client.release();
-    }
-}
-
-////File
-// Получение файлов для сообщений
-export async function getMessageFiles(messageIds: number[]): Promise<Map<number, any[]>> {
-    if (messageIds.length === 0) return new Map();
-    
-    const client = await pool.connect();
-    try {
-        const result = await client.query(
-            `SELECT * FROM message_files WHERE message_id = ANY($1::int[])`,
-            [messageIds]
-        );
-        
-        const filesMap = new Map<number, any[]>();
-        for (const row of result.rows) {
-            if (!filesMap.has(row.message_id)) {
-                filesMap.set(row.message_id, []);
-            }
-            filesMap.get(row.message_id)!.push(row);
-        }
-        return filesMap;
-    } finally {
-        client.release();
-    }
-}
-
-export async function getChatIdByMessageId(messageId: number): Promise<number | null> {
-    const client = await pool.connect();
-    try {
-        const res = await client.query(`SELECT chat_id FROM messages WHERE id = $1`, [messageId]);
-        return res.rows[0]?.chat_id || null;
     } finally {
         client.release();
     }

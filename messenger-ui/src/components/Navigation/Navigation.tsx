@@ -34,18 +34,7 @@ const Navigation = ({ activePage, onNavigate, isAuthenticated, onLogout }: Navig
                         >
                             <span className="nav-link">Контакты</span>
                         </li>
-                        <li 
-                            className={`nav-item ${activePage === 'profile' ? 'nav-item-active' : ''}`}
-                            onClick={() => onNavigate('profile')}
-                        >
-                            <span className="nav-link">Профиль</span>
-                        </li>
-                        <li 
-                            className={`nav-item ${activePage === 'settings' ? 'nav-item-active' : ''}`}
-                            onClick={() => onNavigate('settings')}
-                        >
-                            <span className="nav-link">Настройки</span>
-                        </li>
+        
                         <li 
                             className="nav-item"
                             onClick={onLogout}

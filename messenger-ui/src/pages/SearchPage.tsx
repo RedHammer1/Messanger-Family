@@ -24,7 +24,7 @@ const SearchPage = ({ currentUserId }: SearchPageProps) => {
 
     const checkIsContact = async (userId: number) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/contacts/${currentUserId}/check/${userId}`);
+            const response = await fetch(`http://localhost:3306/api/contacts/${currentUserId}/check/${userId}`);
             const data = await response.json();
             setIsContact(prev => new Map(prev).set(userId, data.isContact));
         } catch (err) {
@@ -39,7 +39,7 @@ const SearchPage = ({ currentUserId }: SearchPageProps) => {
         setSearchPerformed(true);
         
         try {
-            const response = await fetch(`http://localhost:3001/api/users/search?q=${encodeURIComponent(query)}`, {
+            const response = await fetch(`http://localhost:3306/api/users/search?q=${encodeURIComponent(query)}`, {
                 headers: {
                     'X-User-Id': currentUserId.toString()
                 }
@@ -59,7 +59,7 @@ const SearchPage = ({ currentUserId }: SearchPageProps) => {
 
     const addToContacts = async (contactId: number) => {
         try {
-            const response = await fetch(`http://localhost:3001/api/contacts/${currentUserId}/add/${contactId}`, {
+            const response = await fetch(`http://localhost:3306/api/contacts/${currentUserId}/add/${contactId}`, {
                 method: 'POST'
             });
             if (response.ok) {
